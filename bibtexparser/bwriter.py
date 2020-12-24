@@ -8,7 +8,6 @@ from bibtexparser.bibdatabase import (BibDatabase, COMMON_STRINGS,
                                       BibDataString,
                                       BibDataStringExpression)
 
-
 logger = logging.getLogger(__name__)
 
 __all__ = ['BibTexWriter']
@@ -61,7 +60,7 @@ class BibTexWriter(object):
         #: Characters(s) for separating BibTeX entries. Default: new line.
         self.entry_separator = '\n'
         #: Tuple of fields for ordering BibTeX entries. Set to `None` to disable sorting. Default: BibTeX key `('ID', )`.
-        self.order_entries_by = ('ID', )
+        self.order_entries_by = ('ID',)
         #: Tuple of fields for display order in a single BibTeX entry. Fields not listed here will be displayed
         #: alphabetically at the end. Set to '[]' for alphabetical order. Default: '[]'
         self.display_order = []
@@ -130,17 +129,26 @@ class BibTexWriter(object):
         # Write field = value lines
         for field in [i for i in display_order if i not in ['ENTRYTYPE', 'ID']]:
             try:
+                value = _str_or_expr_to_bibtex(entry[field])
+
+                value_indent = len(self.indent) + 3 + 1
+                if self._max_field_width > 0:
+                    value_indent += self._max_field_width
+                else:
+                    value_indent += len(field)
+                value = value.replace('\n', '\n' + value_indent * ' ')
+
                 bibtex += field_fmt.format(
                     indent=self.indent,
                     field=field,
                     field_max_w=self._max_field_width,
-                    value=_str_or_expr_to_bibtex(entry[field]))
+                    value=value)
             except TypeError:
                 raise TypeError(u"The field %s in entry %s must be a string"
                                 % (field, entry['ID']))
         if self.add_trailing_comma:
             if self.comma_first:
-                bibtex += '\n'+self.indent+','
+                bibtex += '\n' + self.indent + ','
             else:
                 bibtex += ','
         bibtex += "\n}\n" + self.entry_separator
